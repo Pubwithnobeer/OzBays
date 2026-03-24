@@ -4,7 +4,6 @@
 
 <div class="row">
     <div class="col-md-8">
-
         <div class="row"  style="text-align: justify">
             <div class="card card-body">
                 @if(Auth::guest())
@@ -18,25 +17,11 @@
             </div>
         </div>
 
-        <div class="row mt-4">
-            <div class="col-md-6" style="padding-left: 0px;">
-                <div class="card card-body" >
-                    <h3>Current Ground Traffic</h3>
-                    <p>Top 3 Aerodromes by ground movements</p>
-                </div>
-            </div>
-
-            <div class="col-md-6" style="padding: 0px;">
-                <div class="card card-body">
-                    <h3>Current Inbound</h3>
-                    <p>Top 3 airports by inbound traffic levels</p>
-                </div>
-            </div>
-        </div>
+        <x id="ground-traffic"></x>
     </div>
 
     <div class="col-md-4" style="text-align: justify">
-        <div class="card card-body mt-4">
+        <div class="card card-body">
             @if(Auth::guest())
                 <h2>OzBays Discord</h2>
                 <p>OzBays has a dedicated Discord Server for VATSIM Community Members. This server is a place for announcements, discussion, as well as feedback to be provided from the community directly to those developing & maintaining the program.</p>
@@ -52,4 +37,27 @@
         </div>
     </div>
 </div>
+
+<script>
+    function loadLadder() {
+        fetch('/partial/home/airport-stats')
+            .then(res => res.text())
+            .then(html => {
+                const container = document.getElementById('ground-traffic');
+
+                // Create temp wrapper
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+
+                // Replace children in one operation
+                container.replaceChildren(...temp.children);
+            });
+        }
+
+        // Initial load
+        loadLadder();
+
+        // Refresh every 15s
+        setInterval(loadLadder, 15000);
+</script>
 @endsection

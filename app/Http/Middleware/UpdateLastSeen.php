@@ -14,7 +14,7 @@ class UpdateLastSeen
             $user = auth()->user();
 
             // only update once every 5 minutes to avoid constant writes
-            if (!$user->last_seen_at || $user->last_seen_at->lt(now()->subMinutes(5))) {
+            if (!$user->last_seen_at || $user->last_seen_at->lt(now()->subMinutes(60))) {
                 $user->forceFill([
                     'last_seen' => now(),
                 ])->save();
