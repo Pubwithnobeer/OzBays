@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use App\Models\Airports;
 use App\Models\Bays;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
@@ -42,6 +43,13 @@ class DashboardController extends Controller
         }
 
         return view('dashboard.admin.airport.bay-view', compact('bay'));
+    }
+
+    public function userList()
+    {
+        $users = User::all();
+
+        return view('dashboard.admin.user.index', compact('users'));
     }
 
     // Disable Airport Function

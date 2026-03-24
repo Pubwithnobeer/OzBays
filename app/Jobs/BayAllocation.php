@@ -173,11 +173,16 @@ class BayAllocation implements ShouldQueue
 
             foreach($clearBays as $bay){
 
+                // dd($clearBays);
+
                 // Remove all slots for Departure - They have now left the gate
-                $slotsClear = BayAllocations::where('callsign', $bay->FlightInfo->id)->get();
-                foreach($slotsClear as $slot){
-                    $slot->delete();
+                if($bay->FlightInfo !== null){
+                    $slotsClear = BayAllocations::where('callsign', $bay->FlightInfo->id)->get();
+                    foreach($slotsClear as $slot){
+                        $slot->delete();
+                    }
                 }
+                
 
                 // // Update the bay as available
                 $bay->status = null;
@@ -418,6 +423,7 @@ class BayAllocation implements ShouldQueue
         // E.g. Priority 5 JST Bay trumps Priority 1 NULL Bay.
 
         // Need to also ensure that the system doesn't give a stupid bay before 
+
         $callsign = is_array($cs) ? ($cs['cs'] ?? null) : $cs;
         $info = $callsign !== null ? Flights::where('callsign', $callsign)->first() : null;
 
@@ -451,16 +457,16 @@ class BayAllocation implements ShouldQueue
         ### - Preferred Bay Assignment Check can go Here - Pull data from online sources?
         {
             // Grab Live Bay Assignment
-            // $live_bay = FlightLiveBays::where('callsign', $cs)->with('bayInfo')->first();
+            $live_bay = FlightLiveBays::where('callsign', $cs['cs'])->where('airport', $cs['arr'])->with('bayInfo')->first();
 
-            // if($live_bay !== null){
-            //     // Check if the IRL Bay Assignment is available - If so, select it
-            //     if($live_bay->bayInfo->status == null){
-            //         $live_bay_details = $live_bay->bayInfo;
+            if($live_bay !== null){
+                // Check if the IRL Bay Assignment is available - If so, select it
+                if($live_bay->bayInfo->status == null){
+                    $live_bay_details = $live_bay->bayInfo;
 
-            //         return $live_bay_details;
-            //     }
-            // }
+                    return $live_bay_details;
+                }
+            }
         }
 
         ##### - AIRCRAFT CASE EXPRESSION

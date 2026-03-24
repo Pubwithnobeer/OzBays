@@ -39,6 +39,9 @@ Route::get('/map/{icao}', [MapController::class, 'airportMap']);
         // Route::post('airport/{icao}/update', [DashboardController::class, 'airportView'])->name('dashboard.admin.airport.update');
         // Route::post('airport/{icao}/approve', [DashboardController::class, 'airportView'])->name('dashboard.admin.airport.approve.change');
 
+        // User Information
+        Route::get('users', [DashboardController::class, 'userList'])->name('dashboard.admin.users.list');
+
         // Aircraft Information
         Route::get('aircraft', [DashboardController::class, 'aircraftList'])->name('dashboard.admin.aircraft.all');
     });

@@ -220,7 +220,7 @@ use Carbon\Carbon;
 
                 @can('view users')
                   <div class="dropdown-divider"></div> {{-- Divider --}}
-                  <a class="dropdown-item disabled" href="#">View All Users</a>
+                  <a class="dropdown-item" href="{{route('dashboard.admin.users.list')}}">View All Users</a>
                 @endcan
               </div>
             </li>

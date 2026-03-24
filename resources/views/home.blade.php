@@ -3,9 +3,9 @@
 @section('content')
 
 <div class="row">
-    <div class="col-md-8" style="text-align: justify">
+    <div class="col-md-8">
 
-        <div class="row">
+        <div class="row"  style="text-align: justify">
             <div class="card card-body">
                 @if(Auth::guest())
                     <h2>Welcome to OzBays! - Coming in 2026!</h2>
@@ -21,26 +21,21 @@
         <div class="row mt-4">
             <div class="col-md-6" style="padding-left: 0px;">
                 <div class="card card-body" >
-                    <h2>Live Stats</h2>
-                    <p>Live Airport Activity</p>
+                    <h3>Current Ground Traffic</h3>
+                    <p>Top 3 Aerodromes by ground movements</p>
                 </div>
             </div>
 
             <div class="col-md-6" style="padding: 0px;">
                 <div class="card card-body">
-                    <h2>Live Stats</h2>
-                    <p>See current network stats for airports served by OzBays.</p>
+                    <h3>Current Inbound</h3>
+                    <p>Top 3 airports by inbound traffic levels</p>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="col-md-4" style="text-align: justify">
-        <div class="card card-body">
-            <h2>Recent News</h2>
-            <p>News articles are coming soon! Alongside many, many new features!</p>
-        </div>
-
         <div class="card card-body mt-4">
             @if(Auth::guest())
                 <h2>OzBays Discord</h2>
