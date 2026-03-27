@@ -146,7 +146,7 @@ class FlightData implements ShouldQueue
 
                 // Calculate Landing and Block Time (Estimates)
 
-                if($aircraft){
+                if($aircraft && $aircraft->arrivalAirport){
                     if ($pilot->groundspeed > 80 && $distanceToArrival < 200 && $aircraft->elt == null) {
                         // dd($aircraft);
                         $TimeRemaining = (($distanceToArrival / $pilot->groundspeed) * 60);

@@ -163,7 +163,7 @@ class BayAllocation implements ShouldQueue
                 }
 
                 // Does an arrival aircraft require bay assignment?
-                if((empty($ac->assignedBay) || $ac->assignedBay->isEmpty()) && $ac->speed > 80 &&$ac->status == "On Approach"){
+                if((empty($ac->assignedBay) || $ac->assignedBay->isEmpty()) && $ac->speed > 80 &&$ac->status == "On Approach" && $ac->eibt !== null){
                     $unscheduledArrivals[] = ['cs' => $ac->callsign, 'cs_id' => $ac->id, 'arr' => $ac->arr, 'ac' => $ac->ac, 'elt' => $ac->elt, 'eibt' => $ac->eibt, 'ac_model' => $ac];
                 }
             }

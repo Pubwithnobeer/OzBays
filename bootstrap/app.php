@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             UpdateLastSeen::class,
         ]);
+        $middleware->redirectGuestsTo(fn () => route('auth.sso.login'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (Throwable $e) {
