@@ -16,6 +16,7 @@ use App\Models\BayConflicts;
 use App\Models\Flights;
 use App\Models\Airline;
 use App\Models\FlightLiveBays;
+use App\Models\UserPreference;
 
 class BayAllocation implements ShouldQueue
 {
@@ -435,7 +436,7 @@ class BayAllocation implements ShouldQueue
         $acType = strtoupper((string) $info->ac);
         $isFreight = in_array($acType, $this->freightOnlyTypes, true) || Airline::isFreightCallsign($info->callsign);
 
-        // Index the AC so it can 
+        // Index the AC so it can be used later
         $aircraftIndex = null;
         foreach ($aircraftJSON as $index => $types) {
             if (in_array($info->ac, $types, true)) {
@@ -449,90 +450,60 @@ class BayAllocation implements ShouldQueue
 
         if (!in_array($info->ac, $allowedTypes, true)) {
             Log::channel('aircraft')->error($info->ac . ' type does not exist');
+            $discord = new DiscordClient();
+            $discord->sendMessage(config('services.discord.'.env('APP_ENV').'.ac_errors'), "Aircraft ICAO Missing | {$info->ac} missing from Aircraft.json file");
             $ac = 'B738';
         } else {
             $ac = $info->ac;
         }
 
-        ### - Preferred Bay Assignment Check can go Here - Pull data from online sources?
+        ### - Preferred Bay Assignment Check can go Here - Pulls data every hour from FLIGHTAWARE API
         {
             // Grab Live Bay Assignment
             $live_bay = FlightLiveBays::where('callsign', $cs['cs'])->where('airport', $cs['arr'])->with('bayInfo')->first();
 
             if($live_bay !== null){
                 // Check if the IRL Bay Assignment is available - If so, select it
-                if($live_bay->bayInfo->status == null){
-                    $live_bay_details = $live_bay->bayInfo;
+                if($live_bay->scheduled_bay !== null){
+                    if($live_bay->bayInfo->status == null){
+                        $live_bay_details = $live_bay->bayInfo;
 
-                    return $live_bay_details;
+                        return $live_bay_details;
+                    }
                 }
             }
         }
 
-        ##### - AIRCRAFT CASE EXPRESSION
-        $aircraftPriorityParts = [];
+        ##### - AIRCRAFT CASE EXPRESSION --- This is the super restrictive function (Always )
+        {
+            $aircraftPriorityParts = [];
 
-        foreach ($allowedTypes as $i => $type) {
-            $aircraftPriorityParts[] =
-                "IF(FIND_IN_SET('$type', REPLACE(aircraft, '/', ',')) > 0, $i, -1)";
-        }
+            foreach ($allowedTypes as $i => $type) {
+                $aircraftPriorityParts[] =
+                    "IF(FIND_IN_SET('$type', REPLACE(aircraft, '/', ',')) > 0, $i, -1)";
+            }
 
-        $aircraftPrioritySql = "GREATEST(" . implode(", ", $aircraftPriorityParts) . ")";
+            $aircraftPrioritySql = "GREATEST(" . implode(", ", $aircraftPriorityParts) . ")";
 
-        $availableBaysQuery = Bays::where('airport', $info->arr)
-            ->whereNull('callsign')
-
-            ->when(!$isFreight, function ($q) use ($info) {
-                $q->whereRaw("(pax_type = ? OR pax_type IS NULL)", [$info->type]);
-            })
-
-            ->when($isFreight, function ($q) {
-                $q->where('pax_type', 'FRT');
-            }, function ($q) {
-                $q->where(function ($q2) {
-                    $q2->whereNull('pax_type')->orWhere('pax_type', '!=', 'FRT');
-                });
-            })
-
-            // Order by Bay Prioriies (1=most, 9=never?)
-            ->orderBy('priority', 'asc')
-
-            // Order bays by Aircraft Closeness to 
-            ->where(function ($q) use ($allowedTypes) {
-                foreach ($allowedTypes as $type) {
-                    $q->orWhereRaw(
-                        "aircraft REGEXP CONCAT('(^|/)', ?, '(/|$)')",
-                        [$type]
-                    );
-                }
-            })
-
-            ->where(function ($q) use ($operator) {
-                $q->whereRaw("FIND_IN_SET(?, REPLACE(operators, ' ', ''))", [$operator])
-                ->orWhereNull('operators');
-            })
-
-            ->orderByRaw($aircraftPrioritySql)
-
-            // Operator Order (QFA, QLK v QLK, QFA assignment priority)
-            ->orderByRaw("
-                CASE 
-                    WHEN operators IS NULL THEN 4
-                    ELSE FIND_IN_SET(?, REPLACE(operators, ' ', ''))
-                END
-            ", [$operator])
-
-            ->orderByRaw("RAND()")
-            
-        ;
-
-        $availableBays = $availableBaysQuery->get();
-
-        if ($isFreight && ($availableBays === null || $availableBays->isEmpty())) {
-            $availableBays = Bays::where('airport', $info->arr)
+            $availableBaysQuery = Bays::where('airport', $info->arr)
                 ->whereNull('callsign')
-                ->whereRaw("(pax_type = ? OR pax_type IS NULL)", [$info->type])
+
+                ->when(!$isFreight, function ($q) use ($info) {
+                    $q->whereRaw("(pax_type = ? OR pax_type IS NULL)", [$info->type]);
+                })
+
+                ->when($isFreight, function ($q) {
+                    $q->where('pax_type', 'FRT');
+                }, function ($q) {
+                    $q->where(function ($q2) {
+                        $q2->whereNull('pax_type')->orWhere('pax_type', '!=', 'FRT');
+                    });
+                })
+
+                // Order by Bay Prioriies (1=most, 9=never?)
                 ->orderBy('priority', 'asc')
+
+                // Order bays by Aircraft Closeness to 
                 ->where(function ($q) use ($allowedTypes) {
                     foreach ($allowedTypes as $type) {
                         $q->orWhereRaw(
@@ -541,27 +512,121 @@ class BayAllocation implements ShouldQueue
                         );
                     }
                 })
+
                 ->where(function ($q) use ($operator) {
                     $q->whereRaw("FIND_IN_SET(?, REPLACE(operators, ' ', ''))", [$operator])
                     ->orWhereNull('operators');
                 })
-                ->where(function ($q2) {
-                    $q2->whereNull('pax_type')->orWhere('pax_type', '!=', 'FRT');
-                })
+
                 ->orderByRaw($aircraftPrioritySql)
+
+                // Operator Order (QFA, QLK v QLK, QFA assignment priority)
                 ->orderByRaw("
                     CASE 
                         WHEN operators IS NULL THEN 4
                         ELSE FIND_IN_SET(?, REPLACE(operators, ' ', ''))
                     END
                 ", [$operator])
+
                 ->orderByRaw("RAND()")
-            ->get();
+                
+            ;
+
+            $availableBays = $availableBaysQuery->get();
+
+            if ($isFreight && ($availableBays === null || $availableBays->isEmpty())) {
+                $availableBays = Bays::where('airport', $info->arr)
+                    ->whereNull('callsign')
+                    ->whereRaw("(pax_type = ? OR pax_type IS NULL)", [$info->type])
+                    ->orderBy('priority', 'asc')
+                    ->where(function ($q) use ($allowedTypes) {
+                        foreach ($allowedTypes as $type) {
+                            $q->orWhereRaw(
+                                "aircraft REGEXP CONCAT('(^|/)', ?, '(/|$)')",
+                                [$type]
+                            );
+                        }
+                    })
+                    ->where(function ($q) use ($operator) {
+                        $q->whereRaw("FIND_IN_SET(?, REPLACE(operators, ' ', ''))", [$operator])
+                        ->orWhereNull('operators');
+                    })
+                    ->where(function ($q2) {
+                        $q2->whereNull('pax_type')->orWhere('pax_type', '!=', 'FRT');
+                    })
+                    ->orderByRaw($aircraftPrioritySql)
+                    ->orderByRaw("
+                        CASE 
+                            WHEN operators IS NULL THEN 4
+                            ELSE FIND_IN_SET(?, REPLACE(operators, ' ', ''))
+                        END
+                    ", [$operator])
+                    ->orderByRaw("RAND()")
+                ->get();
+            }
         }
 
         ####### - Oh No, The Harder Rule returned no options!!!!!!!  We need to find something, so lets do a relaxed version.......
-        if($availableBays !== null){
+        // $availableBays = null; //Set this when testing the relaxed function
 
+        if($availableBays == null){
+            // $aircraftPriorityParts = [];
+
+            // foreach ($allowedTypes as $i => $type) {
+            //     $aircraftPriorityParts[] =
+            //         "IF(FIND_IN_SET('$type', REPLACE(aircraft, '/', ',')) > 0, $i, -1)";
+            // }
+
+            // $aircraftPrioritySql = "GREATEST(" . implode(", ", $aircraftPriorityParts) . ")";
+
+            // $availableBaysQuery = Bays::where('airport', $info->arr)
+            //     ->whereNull('callsign')
+
+            //     ->when(!$isFreight, function ($q) use ($info) {
+            //         $q->whereRaw("(pax_type = ? OR pax_type IS NULL)", [$info->type]);
+            //     })
+
+            //     ->when($isFreight, function ($q) {
+            //         $q->where('pax_type', 'FRT');
+            //     }, function ($q) {
+            //         $q->where(function ($q2) {
+            //             $q2->whereNull('pax_type')->orWhere('pax_type', '!=', 'FRT');
+            //         });
+            //     })
+
+            //     // Order by Bay Prioriies (1=most, 9=never?)
+            //     ->orderBy('priority', 'asc')
+
+            //     // Order bays by Aircraft Closeness to 
+            //     ->where(function ($q) use ($allowedTypes) {
+            //         foreach ($allowedTypes as $type) {
+            //             $q->orWhereRaw(
+            //                 "aircraft REGEXP CONCAT('(^|/)', ?, '(/|$)')",
+            //                 [$type]
+            //             );
+            //         }
+            //     })
+
+            //     ->where(function ($q) use ($operator) {
+            //         $q->whereRaw("FIND_IN_SET(?, REPLACE(operators, ' ', ''))", [$operator])
+            //         ->orWhereNull('operators');
+            //     })
+
+            //     ->orderByRaw($aircraftPrioritySql)
+
+            //     // Operator Order (QFA, QLK v QLK, QFA assignment priority)
+            //     ->orderByRaw("
+            //         CASE 
+            //             WHEN operators IS NULL THEN 4
+            //             ELSE FIND_IN_SET(?, REPLACE(operators, ' ', ''))
+            //         END
+            //     ", [$operator])
+
+            //     ->orderByRaw("RAND()");
+
+            // $availableBays = $availableBaysQuery->get();
+
+            // dd($availableBays);
         }
 
         $candidates = $availableBays->take(7);
@@ -673,7 +738,7 @@ class BayAllocation implements ShouldQueue
         } catch (\Throwable $e) {
             Log::channel('bays')->error("assignBay() failed for {$info['cs']}: {$e->getMessage()}");
             $discord = new DiscordClient();
-            $discord->sendMessage(config('services.discord.'.env('APP_ENV').'.bay_errors'), "Bay Assignment Failed | assignBay() failed for {$info['cs']}: {$e->getMessage()} \n <@200426385863344129>");
+            $discord->sendMessage(config('services.discord.'.env('APP_ENV').'.bay_errors'), "Bay Assignment Failed | assignBay() failed for {$info['cs']} - {$e->getMessage()}: \n > {$info['ac_model']}");
 
             return null; // <-- This prevents the outer loop from crashing
         }
@@ -699,6 +764,14 @@ class BayAllocation implements ShouldQueue
         ];
 
         $cid = (int) $cid;
+        $user_preferences = UserPreference::where('user_id', $cid)->first();
+        
+        if($user_preferences !== null){
+            if($user->preferences->hoppie_usage == 0)
+            // User preference section exists and it is set as do not do...
+            echo "Cancel Hoppie Message - User has it disabled";
+            return null; 
+        }
 
         $hoppie = app(HoppieClient::class);
         $Uplink = $this->BuildCPDLCMessage($version, $flight, $dep, $arr, $bayType, $arrBay, $cid);
