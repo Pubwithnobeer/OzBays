@@ -1100,7 +1100,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "B744/B773",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "69A": {
@@ -1109,7 +1109,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "A321/B739",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "70": {
@@ -1118,7 +1118,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "B744/B733",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "70A": {
@@ -1127,7 +1127,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "A321/B739",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "70B": {
@@ -1136,7 +1136,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "A321/B739",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "71": {
@@ -1145,7 +1145,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "A388",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "71A": {
@@ -1154,7 +1154,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "B739/A321",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "71B": {
@@ -1163,7 +1163,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "A321/B739",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "72": {
@@ -1172,7 +1172,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "A388",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "72A": {
@@ -1181,7 +1181,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "A321/B739",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "72B": {
@@ -1190,7 +1190,7 @@
                     "Operator": null,
                     "Terminal": "International",
                     "AC": "A321/B739",
-                    "Type": "INT",
+                    "Type": "INTL",
                     "Priority": 5
                 },
                 "73": {
