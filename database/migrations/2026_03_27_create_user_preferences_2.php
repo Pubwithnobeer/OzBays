@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedInteger('user_id');
             $table->integer('name_format')->default(2);
             $table->integer('hoppie_usage')->default(1);
+            $table->integer('email_feedback')->default(1);
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users');

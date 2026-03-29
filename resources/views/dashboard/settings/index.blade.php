@@ -14,6 +14,9 @@
     {{-- Hidden Items --}}
     <input required type="hidden" value={{Auth::user()->id}} name="id" maxlength="10" id="id" class="form-control">
 
+    {{-- General Sections --}}
+    <h2><u>General</u></h2>
+
     {{-- Name Format --}}
     <div class="d-flex flex-row justify-content-between mt-2">
         <div>
@@ -47,6 +50,24 @@
         </div>
     </div>
 
+    <hr>
+
+    {{-- Email Sections --}}
+    <h2><u>Emails</u></h2>
+
+    {{-- Feedback Email --}}
+    <div class="d-flex flex-row justify-content-between mt-2">
+        <div>
+            <h4 class="font-weight-bold blue-text">Feedback Emails</h4>
+            <p>Recieve emails from OzBays asking for feedback about your experience? (Maximum once per month)</p>
+        </div>
+        <div style="width: 30%;">
+            <select name="email_feedback" class="form-control">
+                <option value="1" @if(Auth::user()->userPreferences->email_feedback == 1) selected @endif>Yes - Recieve feedback from OzBays about your experience</option>
+                <option value="0" @if(Auth::user()->userPreferences->email_feedback == 0) selected @endif>No - I do not want to provide feedback</option>
+            </select>
+        </div>
+    </div>
     <hr>
 
     {{-- Save Button --}}

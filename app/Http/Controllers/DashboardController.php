@@ -28,6 +28,7 @@ class DashboardController extends Controller
         $user = UserPreference::where('user_id', $request->id)->first();
         $user->name_format = $request->name_format;
         $user->hoppie_usage = $request->hoppie_usage;
+        $user->email_feedback = $request->email_feedback;
         $user->save();
 
         return back()->with('success', 'Success!!! Your settings where updated!');

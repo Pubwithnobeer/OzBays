@@ -464,10 +464,12 @@ class BayAllocation implements ShouldQueue
 
             if($live_bay !== null){
                 // Check if the IRL Bay Assignment is available - If so, select it
-                if($live_bay->bayInfo->status == null){
-                    $live_bay_details = $live_bay->bayInfo;
+                if($live_bay->scheduled_bay !== null){
+                    if($live_bay->bayInfo->status == null){
+                        $live_bay_details = $live_bay->bayInfo;
 
-                    return $live_bay_details;
+                        return $live_bay_details;
+                    }
                 }
             }
         }
